@@ -35,10 +35,15 @@ def upload():
     img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
 
     # resize
-    img = cv2.resize(img, (640,640))
+    img = cv2.resize(img, (320,320))
 
     # Run YOLO
-    results = model(img)[0]
+    results = model(
+    img,
+    imgsz=320,
+    verbose=False,
+    device="cpu"
+    )[0]
 
     # Draw bounding boxes
     for box in results.boxes:
