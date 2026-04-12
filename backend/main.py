@@ -34,6 +34,9 @@ def upload():
     file_bytes = np.frombuffer(file.read(), np.uint8)
     img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
 
+    # resize
+    img = cv2.resize(img, (640,640))
+
     # Run YOLO
     results = model(img)[0]
 
