@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Bird Detection</title>
+    <style>
+      :root {
+        --bg: #f5f1e9;
+        --panel: rgba(255, 251, 245, 0.92);
+        --ink: #1e2d2a;
+        --muted: #64716c;
+        --line: rgba(30, 45, 42, 0.12);
+        --accent: #1f6b5c;
+        --accent-dark: #184c42;
+        --shadow: 0 24px 60px rgba(20, 37, 33, 0.12);
+        --radius: 24px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(31, 107, 92, 0.14), transparent 30%),
+          linear-gradient(180deg, #faf6f0 0%, var(--bg) 100%);
+      }
+
+      .app {
+        width: min(760px, 100%);
+        padding: 32px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      h1 {
+        margin: 0 0 24px;
+        text-align: center;
+        font-size: clamp(2.1rem, 5vw, 3.4rem);
+        letter-spacing: -0.04em;
+      }
+
+      .controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 22px;
+      }
+
+      input[type="file"] {
+        flex: 1;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        color: var(--muted);
+        font: inherit;
+      }
+
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        opacity: 0.7;
+        cursor: progress;
+      }
+
+      .result-frame {
+        display: grid;
+        place-items: center;
+        min-height: 320px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.68);
+      }
+
+      .placeholder,
+      .status {
+        color: var(--muted);
+        text-align: center;
+      }
+
+      img {
+        display: none;
+        width: 100%;
+        border-radius: 16px;
+      }
+
+      .status {
+        margin-top: 14px;
+        min-height: 24px;
+      }
+
+      @media (max-width: 640px) {
+        .app {
+          padding: 22px;
+        }
+
+        .controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <h1>Bird Detection</h1>
+
+      <div class="controls">
+        <input type="file" id="fileInput" accept="image/*">
+        <button id="uploadButton" type="button" onclick="uploadImage()">Upload</button>
+      </div>
+
+      <div class="result-frame">
+        <div id="placeholder" class="placeholder">Upload an image to view the detection result.</div>
+        <img id="resultImage" alt="Bird detection result">
+      </div>
+
+      <div id="results" class="status"></div>
+    </main>
+
+    <script>
+      async function uploadImage() {
+        const fileInput = document.getElementById("fileInput");
+        const uploadButton = document.getElementById("uploadButton");
+        const resultImage = document.getElementById("resultImage");
+        const placeholder = document.getElementById("placeholder");
+        const results = document.getElementById("results");
+        const file = fileInput.files[0];
+
+        if (!file) {
+          results.textContent = "Please choose an image first.";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        uploadButton.disabled = true;
+        uploadButton.textContent = "Uploading...";
+        results.textContent = "Processing image...";
+
+        try {
+          const res = await fetch("/upload", {
+            method: "POST",
+            body: formData
+          });
+
+          if (!res.ok) {
+            throw new Error("Upload failed.");
+          }
+
+          const blob = await res.blob();
+          const imageUrl = URL.createObjectURL(blob);
+
+          resultImage.src = imageUrl;
+          resultImage.style.display = "block";
+          placeholder.style.display = "none";
+          results.textContent = "";
+        } catch (error) {
+          resultImage.style.display = "none";
+          placeholder.style.display = "block";
+          results.textContent = error.message;
+        } finally {
+          uploadButton.disabled = false;
+          uploadButton.textContent = "Upload";
+        }
+      }
+    </script>
+  </body>
+</html>
