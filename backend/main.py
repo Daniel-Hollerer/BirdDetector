@@ -38,12 +38,13 @@ def upload():
     img = cv2.resize(img, (320,320))
 
     # Run YOLO
-    results = model(
-    img,
+    results = model.predict(
+    source=img,
     imgsz=320,
-    verbose=False,
-    device="cpu"
-    )[0]
+    conf=0.25,
+    device="cpu",
+    verbose=False
+)[0]
 
     # Draw bounding boxes
     for box in results.boxes:
