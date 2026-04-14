@@ -7,14 +7,14 @@
     <title>Bird Detection</title>
     <style>
       :root {
-        --bg: #f5f1e9;
-        --panel: rgba(255, 251, 245, 0.92);
-        --ink: #1e2d2a;
-        --muted: #64716c;
-        --line: rgba(30, 45, 42, 0.12);
-        --accent: #1f6b5c;
-        --accent-dark: #184c42;
-        --shadow: 0 24px 60px rgba(20, 37, 33, 0.12);
+        --bg: #08141b;
+        --panel: rgba(13, 27, 34, 0.9);
+        --ink: #edf6f8;
+        --muted: #97acb4;
+        --line: rgba(237, 246, 248, 0.12);
+        --accent: #2ea38c;
+        --accent-dark: #1f7364;
+        --shadow: 0 28px 70px rgba(0, 0, 0, 0.42);
         --radius: 24px;
       }
 
@@ -31,12 +31,19 @@
         font-family: Georgia, "Times New Roman", serif;
         color: var(--ink);
         background:
-          radial-gradient(circle at top left, rgba(31, 107, 92, 0.14), transparent 30%),
-          linear-gradient(180deg, #faf6f0 0%, var(--bg) 100%);
+          radial-gradient(circle at top left, rgba(46, 163, 140, 0.22), transparent 32%),
+          radial-gradient(circle at bottom right, rgba(38, 77, 95, 0.3), transparent 30%),
+          linear-gradient(180deg, #03090d 0%, var(--bg) 100%);
       }
 
       .app {
         width: min(760px, 100%);
+        display: grid;
+        gap: 18px;
+      }
+
+      .hero,
+      .workspace {
         padding: 32px;
         border: 1px solid var(--line);
         border-radius: var(--radius);
@@ -45,7 +52,7 @@
       }
 
       h1 {
-        margin: 0 0 24px;
+        margin: 0;
         text-align: center;
         font-size: clamp(2.1rem, 5vw, 3.4rem);
         letter-spacing: -0.04em;
@@ -58,13 +65,33 @@
         margin-bottom: 22px;
       }
 
+      .mode-toggle {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .mode-button {
+        flex: 1;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 12px 16px;
+        background: rgba(5, 16, 22, 0.7);
+        color: var(--muted);
+      }
+
+      .mode-button.active {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fff;
+      }
+
       input[type="file"] {
         flex: 1;
         padding: 14px;
         border: 1px solid var(--line);
         border-radius: 14px;
-        background: #fff;
-        color: var(--muted);
+        background: rgba(5, 16, 22, 0.82);
+        color: var(--ink);
         font: inherit;
       }
 
@@ -85,13 +112,17 @@
       }
 
       .result-frame {
-        display: grid;
-        place-items: center;
         min-height: 320px;
         padding: 18px;
         border: 1px solid var(--line);
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.68);
+        background: rgba(5, 16, 22, 0.72);
+      }
+
+      .upload-note {
+        margin: 12px 0 0;
+        color: var(--muted);
+        text-align: center;
       }
 
       .placeholder,
@@ -100,10 +131,71 @@
         text-align: center;
       }
 
-      img {
+      .gallery {
         display: none;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+      }
+
+      .result-card {
+        display: grid;
+        gap: 12px;
+      }
+
+      .result-card img {
         width: 100%;
         border-radius: 16px;
+      }
+
+      .result-card video {
+        width: 100%;
+        border-radius: 16px;
+        background: #000;
+      }
+
+      .result-warning {
+        margin: 10px 0 0;
+        color: #f7c97f;
+      }
+
+      .result-link {
+        display: inline-block;
+        margin-top: 10px;
+        color: #8be5d3;
+        text-decoration: none;
+      }
+
+      .result-link:hover {
+        text-decoration: underline;
+      }
+
+      .result-meta {
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(12, 27, 35, 0.96);
+      }
+
+      .result-name {
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
+      .result-confidence,
+      .result-file {
+        margin: 6px 0 0;
+        color: var(--muted);
+      }
+
+      .result-list {
+        margin: 10px 0 0;
+        padding: 0;
+        list-style: none;
+        color: var(--muted);
+      }
+
+      .result-list li + li {
+        margin-top: 4px;
       }
 
       .status {
@@ -113,6 +205,11 @@
 
       @media (max-width: 640px) {
         .app {
+          gap: 14px;
+        }
+
+        .hero,
+        .workspace {
           padding: 22px;
         }
 
@@ -129,44 +226,159 @@
   </head>
   <body>
     <main class="app">
-      <h1>Bird Detection</h1>
+      <section class="hero">
+        <h1>Bird Detection</h1>
+        <p class="upload-note">Switch between image and video uploads while keeping the same detection workspace.</p>
+      </section>
 
-      <div class="controls">
-        <input type="file" id="fileInput" accept="image/*">
-        <button id="uploadButton" type="button" onclick="uploadImage()">Upload</button>
-      </div>
+      <section class="workspace">
+        <div class="mode-toggle">
+          <button id="imageModeButton" class="mode-button active" type="button" onclick="setUploadMode('image')">Images</button>
+          <button id="videoModeButton" class="mode-button" type="button" onclick="setUploadMode('video')">Video</button>
+        </div>
 
-      <div class="result-frame">
-        <div id="placeholder" class="placeholder">Upload an image to view the detection result.</div>
-        <img id="resultImage" alt="Bird detection result">
-      </div>
+        <div class="controls">
+          <input type="file" id="fileInput" accept="image/*" multiple>
+          <button id="uploadButton" type="button" onclick="uploadImages()">Upload Images</button>
+        </div>
 
-      <div id="results" class="status"></div>
+        <div class="result-frame">
+          <div id="placeholder" class="placeholder">Upload an image to view the detection result.</div>
+          <div id="gallery" class="gallery"></div>
+        </div>
+
+        <div id="results" class="status"></div>
+      </section>
     </main>
 
+    <script src="./config.js"></script>
     <script>
-      async function uploadImage() {
+      let uploadMode = "image";
+      const apiBaseUrl = (window.BIRD_API_BASE_URL || "").replace(/\/$/, "");
+
+      function apiUrl(path) {
+        return apiBaseUrl ? `${apiBaseUrl}${path}` : path;
+      }
+
+      function setUploadMode(mode) {
         const fileInput = document.getElementById("fileInput");
         const uploadButton = document.getElementById("uploadButton");
-        const resultImage = document.getElementById("resultImage");
+        const imageModeButton = document.getElementById("imageModeButton");
+        const videoModeButton = document.getElementById("videoModeButton");
         const placeholder = document.getElementById("placeholder");
+        const gallery = document.getElementById("gallery");
         const results = document.getElementById("results");
-        const file = fileInput.files[0];
 
-        if (!file) {
-          results.textContent = "Please choose an image first.";
+        uploadMode = mode;
+        fileInput.value = "";
+        gallery.style.display = "none";
+        gallery.innerHTML = "";
+        placeholder.style.display = "block";
+        results.textContent = "";
+
+        if (mode === "video") {
+          fileInput.accept = "video/*";
+          fileInput.multiple = false;
+          uploadButton.textContent = "Upload Video";
+          uploadButton.onclick = uploadVideo;
+          placeholder.textContent = "Upload a video to generate an annotated playback result.";
+          imageModeButton.classList.remove("active");
+          videoModeButton.classList.add("active");
+        } else {
+          fileInput.accept = "image/*";
+          fileInput.multiple = true;
+          uploadButton.textContent = "Upload Images";
+          uploadButton.onclick = uploadImages;
+          placeholder.textContent = "Upload an image to view the detection result.";
+          videoModeButton.classList.remove("active");
+          imageModeButton.classList.add("active");
+        }
+      }
+
+      function renderResultCard(result) {
+        const topDetection = result.top_detection;
+        const title = topDetection ? topDetection.name : "No bird detected";
+        const confidence = topDetection
+          ? `Confidence: ${(topDetection.confidence * 100).toFixed(1)}%`
+          : "Confidence: No detection";
+        const detections = result.detections.length
+          ? `<ul class="result-list">${result.detections
+              .map((detection) => `<li>${detection.name} - ${(detection.confidence * 100).toFixed(1)}%</li>`)
+              .join("")}</ul>`
+          : "";
+
+        return `
+          <article class="result-card">
+            <img src="data:image/jpeg;base64,${result.image}" alt="Detection result for ${result.filename}">
+            <div class="result-meta">
+              <p class="result-name">${title}</p>
+              <p class="result-confidence">${confidence}</p>
+              <p class="result-file">${result.filename}</p>
+              ${detections}
+            </div>
+          </article>
+        `;
+      }
+
+      function renderVideoCard(result) {
+        const topDetection = result.top_detection;
+        const title = topDetection ? topDetection.name : "No bird detected";
+        const confidence = topDetection
+          ? `Confidence: ${(topDetection.confidence * 100).toFixed(1)}%`
+          : "Confidence: No detection";
+        const duration = result.duration_seconds ? `Duration: ${result.duration_seconds}s` : "Duration unavailable";
+        const frames = result.frame_count ? `Frames processed: ${result.frame_count}` : "";
+        const warning = result.warning ? `<p class="result-warning">${result.warning}</p>` : "";
+        const downloadLink = result.download_url
+          ? `<a class="result-link" href="${result.download_url}" target="_blank" rel="noopener noreferrer">Open processed video</a>`
+          : "";
+        const detections = result.detections.length
+          ? `<ul class="result-list">${result.detections
+              .map((detection) => `<li>${detection.name} - ${(detection.confidence * 100).toFixed(1)}%</li>`)
+              .join("")}</ul>`
+          : "";
+
+        return `
+          <article class="result-card">
+            <video controls preload="metadata">
+              <source src="${result.video_url}" type="video/mp4">
+            </video>
+            <div class="result-meta">
+              <p class="result-name">${title}</p>
+              <p class="result-confidence">${confidence}</p>
+              <p class="result-file">${result.filename}</p>
+              <p class="result-file">${duration}</p>
+              <p class="result-file">${frames}</p>
+              ${warning}
+              ${downloadLink}
+              ${detections}
+            </div>
+          </article>
+        `;
+      }
+
+      async function uploadImages() {
+        const fileInput = document.getElementById("fileInput");
+        const uploadButton = document.getElementById("uploadButton");
+        const placeholder = document.getElementById("placeholder");
+        const gallery = document.getElementById("gallery");
+        const results = document.getElementById("results");
+        const files = Array.from(fileInput.files);
+
+        if (!files.length) {
+          results.textContent = "Please choose at least one image first.";
           return;
         }
 
         const formData = new FormData();
-        formData.append("file", file);
+        files.forEach((file) => formData.append("files", file));
 
         uploadButton.disabled = true;
-        uploadButton.textContent = "Uploading...";
-        results.textContent = "Processing image...";
+        uploadButton.textContent = "Processing...";
+        results.textContent = `Processing ${files.length} image${files.length === 1 ? "" : "s"}...`;
 
         try {
-          const res = await fetch("/upload", {
+          const res = await fetch(apiUrl("/upload"), {
             method: "POST",
             body: formData
           });
@@ -175,20 +387,69 @@
             throw new Error("Upload failed.");
           }
 
-          const blob = await res.blob();
-          const imageUrl = URL.createObjectURL(blob);
-
-          resultImage.src = imageUrl;
-          resultImage.style.display = "block";
+          const data = await res.json();
+          gallery.innerHTML = data.results.map(renderResultCard).join("");
+          gallery.style.display = "grid";
           placeholder.style.display = "none";
-          results.textContent = "";
+          results.textContent = `Showing ${data.results.length} processed image${data.results.length === 1 ? "" : "s"}.`;
         } catch (error) {
-          resultImage.style.display = "none";
+          gallery.style.display = "none";
+          gallery.innerHTML = "";
           placeholder.style.display = "block";
           results.textContent = error.message;
         } finally {
           uploadButton.disabled = false;
-          uploadButton.textContent = "Upload";
+          uploadButton.textContent = "Upload Images";
+        }
+      }
+
+      async function uploadVideo() {
+        const fileInput = document.getElementById("fileInput");
+        const uploadButton = document.getElementById("uploadButton");
+        const placeholder = document.getElementById("placeholder");
+        const gallery = document.getElementById("gallery");
+        const results = document.getElementById("results");
+        const file = fileInput.files[0];
+
+        if (!file) {
+          results.textContent = "Please choose a video first.";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("video", file);
+
+        uploadButton.disabled = true;
+        uploadButton.textContent = "Processing...";
+        results.textContent = "Processing video. This can take longer than images...";
+
+        try {
+          const res = await fetch(apiUrl("/upload-video"), {
+            method: "POST",
+            body: formData
+          });
+
+          if (!res.ok) {
+            throw new Error("Video upload failed.");
+          }
+
+          const data = await res.json();
+          gallery.innerHTML = renderVideoCard({
+            ...data,
+            video_url: apiUrl(data.video_url),
+            download_url: apiUrl(data.download_url)
+          });
+          gallery.style.display = "grid";
+          placeholder.style.display = "none";
+          results.textContent = "Processed video ready.";
+        } catch (error) {
+          gallery.style.display = "none";
+          gallery.innerHTML = "";
+          placeholder.style.display = "block";
+          results.textContent = error.message;
+        } finally {
+          uploadButton.disabled = false;
+          uploadButton.textContent = uploadMode === "video" ? "Upload Video" : "Upload Images";
         }
       }
     </script>
