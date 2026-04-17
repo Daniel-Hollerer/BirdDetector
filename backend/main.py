@@ -23,8 +23,8 @@ USE_AUGMENT = os.environ.get("USE_AUGMENT", "false").lower() == "true"
 MAX_DETECTIONS = int(os.environ.get("MAX_DETECTIONS", 20))
 VIDEO_OUTPUT_DIR = os.environ.get("VIDEO_OUTPUT_DIR", "/tmp/bird-detection-output")
 PROCESSED_FILE_TTL_SECONDS = int(os.environ.get("PROCESSED_FILE_TTL_SECONDS", 1800))
-VIDEO_INFERENCE_STRIDE = max(1, int(os.environ.get("VIDEO_INFERENCE_STRIDE", 2)))
-ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "*")
+VIDEO_INFERENCE_STRIDE = max(1, int(os.environ.get("VIDEO_INFERENCE_STRIDE", 1)))
+ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "https://bird-detector.vercel.app")
 
 torch.set_num_threads(TORCH_THREADS)
 torch.set_grad_enabled(False)

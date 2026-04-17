@@ -2,8 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="theme-color" content="#08141b">
     <title>Bird Detection</title>
     <style>
       :root {
@@ -14,155 +15,289 @@
         --line: rgba(237, 246, 248, 0.12);
         --accent: #2ea38c;
         --accent-dark: #1f7364;
+        --accent-dim: rgba(46, 163, 140, 0.15);
         --shadow: 0 28px 70px rgba(0, 0, 0, 0.42);
         --radius: 24px;
+        --touch: 48px;
       }
 
       * {
         box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
       }
 
       body {
         margin: 0;
         min-height: 100vh;
+        min-height: 100dvh;
         display: grid;
-        place-items: center;
-        padding: 24px;
+        place-items: start center;
+        padding: 20px 16px env(safe-area-inset-bottom, 20px);
+        padding-top: max(20px, env(safe-area-inset-top, 20px));
         font-family: Georgia, "Times New Roman", serif;
+        font-size: 16px;
         color: var(--ink);
         background:
           radial-gradient(circle at top left, rgba(46, 163, 140, 0.22), transparent 32%),
           radial-gradient(circle at bottom right, rgba(38, 77, 95, 0.3), transparent 30%),
           linear-gradient(180deg, #03090d 0%, var(--bg) 100%);
+        background-attachment: fixed;
       }
 
       .app {
         width: min(760px, 100%);
         display: grid;
-        gap: 18px;
+        gap: 16px;
+        padding-bottom: 24px;
       }
 
       .hero,
       .workspace {
-        padding: 32px;
+        padding: 28px 24px;
         border: 1px solid var(--line);
         border-radius: var(--radius);
         background: var(--panel);
         box-shadow: var(--shadow);
+        backdrop-filter: blur(8px);
       }
 
       h1 {
         margin: 0;
         text-align: center;
-        font-size: clamp(2.1rem, 5vw, 3.4rem);
+        font-size: clamp(1.8rem, 7vw, 3.2rem);
         letter-spacing: -0.04em;
+        line-height: 1.1;
       }
 
-      .controls {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        margin-bottom: 22px;
+      .subtitle {
+        margin: 10px 0 0;
+        color: var(--muted);
+        text-align: center;
+        font-size: clamp(0.85rem, 3vw, 1rem);
+        line-height: 1.5;
       }
 
+      /* ── Mode toggle ── */
       .mode-toggle {
         display: flex;
-        gap: 10px;
-        margin-bottom: 18px;
+        gap: 8px;
+        margin-bottom: 16px;
       }
 
       .mode-button {
         flex: 1;
+        min-height: var(--touch);
         border: 1px solid var(--line);
         border-radius: 999px;
-        padding: 12px 16px;
+        padding: 10px 16px;
         background: rgba(5, 16, 22, 0.7);
         color: var(--muted);
+        font: inherit;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
       }
 
       .mode-button.active {
         background: linear-gradient(135deg, var(--accent), var(--accent-dark));
         color: #fff;
+        border-color: transparent;
       }
 
-      input[type="file"] {
-        flex: 1;
-        padding: 14px;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        background: rgba(5, 16, 22, 0.82);
+      /* ── Upload zone ── */
+      .upload-zone {
+        border: 2px dashed var(--line);
+        border-radius: 18px;
+        background: rgba(5, 16, 22, 0.5);
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        margin-bottom: 12px;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .upload-zone:hover,
+      .upload-zone.drag-over {
+        border-color: var(--accent);
+        background: var(--accent-dim);
+      }
+
+      .upload-zone-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 28px 20px;
+        min-height: 120px;
+        text-align: center;
+      }
+
+      .upload-icon {
+        font-size: 2rem;
+        line-height: 1;
+        margin-bottom: 2px;
+        opacity: 0.7;
+      }
+
+      .upload-zone-text {
+        margin: 0;
+        font-size: 0.95rem;
         color: var(--ink);
-        font: inherit;
+      }
+
+      .upload-zone-sub {
+        margin: 0;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+
+      .upload-zone-count {
+        margin: 4px 0 0;
+        font-size: 0.82rem;
+        color: var(--accent);
+        font-weight: 700;
+        min-height: 1.2em;
+      }
+
+      /* ── Buttons ── */
+      .button-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
       }
 
       button {
         border: none;
         border-radius: 999px;
-        padding: 14px 22px;
+        padding: 0 22px;
+        height: var(--touch);
+        min-height: var(--touch);
         background: linear-gradient(135deg, var(--accent), var(--accent-dark));
         color: #fff;
         font: inherit;
+        font-size: 0.95rem;
         font-weight: 700;
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: opacity 0.2s, transform 0.1s;
+        white-space: nowrap;
+      }
+
+      button:active:not(:disabled) {
+        transform: scale(0.97);
       }
 
       button:disabled {
-        opacity: 0.7;
+        opacity: 0.65;
         cursor: progress;
       }
 
+      .btn-primary {
+        flex: 1;
+      }
+
+      .btn-camera {
+        flex: 0 0 auto;
+        background: rgba(46, 163, 140, 0.18);
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        padding: 0 18px;
+      }
+
+      .btn-camera:active:not(:disabled) {
+        background: var(--accent-dim);
+      }
+
+      /* ── Result frame ── */
       .result-frame {
-        min-height: 320px;
+        min-height: 240px;
         padding: 18px;
         border: 1px solid var(--line);
         border-radius: 18px;
         background: rgba(5, 16, 22, 0.72);
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .upload-note {
-        margin: 12px 0 0;
+      .result-frame.has-results {
+        display: block;
+        align-items: unset;
+        justify-content: unset;
+      }
+
+      .placeholder {
         color: var(--muted);
         text-align: center;
+        font-size: 0.92rem;
+        line-height: 1.6;
       }
 
-      .placeholder,
       .status {
+        margin-top: 12px;
+        min-height: 22px;
         color: var(--muted);
         text-align: center;
+        font-size: 0.88rem;
       }
 
+      /* ── Spinner ── */
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        flex-shrink: 0;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* ── Gallery ── */
       .gallery {
-        display: none;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 18px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+        gap: 16px;
       }
 
       .result-card {
         display: grid;
-        gap: 12px;
+        gap: 10px;
       }
 
       .result-card img {
         width: 100%;
-        border-radius: 16px;
+        border-radius: 14px;
+        display: block;
       }
 
       .result-card video {
         width: 100%;
-        border-radius: 16px;
+        border-radius: 14px;
         background: #000;
+        display: block;
       }
 
       .result-warning {
-        margin: 10px 0 0;
+        margin: 8px 0 0;
         color: #f7c97f;
+        font-size: 0.85rem;
       }
 
       .result-link {
         display: inline-block;
-        margin-top: 10px;
+        margin-top: 8px;
         color: #8be5d3;
         text-decoration: none;
+        font-size: 0.88rem;
       }
 
       .result-link:hover {
@@ -170,56 +305,70 @@
       }
 
       .result-meta {
-        padding: 14px 16px;
+        padding: 12px 14px;
         border: 1px solid var(--line);
-        border-radius: 16px;
+        border-radius: 14px;
         background: rgba(12, 27, 35, 0.96);
       }
 
       .result-name {
         margin: 0;
-        font-size: 1.05rem;
+        font-size: 1rem;
+        line-height: 1.3;
       }
 
       .result-confidence,
       .result-file {
-        margin: 6px 0 0;
+        margin: 5px 0 0;
         color: var(--muted);
+        font-size: 0.85rem;
       }
 
       .result-list {
-        margin: 10px 0 0;
+        margin: 8px 0 0;
         padding: 0;
         list-style: none;
         color: var(--muted);
+        font-size: 0.85rem;
       }
 
       .result-list li + li {
-        margin-top: 4px;
+        margin-top: 3px;
       }
 
-      .status {
-        margin-top: 14px;
-        min-height: 24px;
-      }
+      /* ── Responsive ── */
+      @media (max-width: 480px) {
+        body {
+          padding: 12px 12px env(safe-area-inset-bottom, 16px);
+          padding-top: max(12px, env(safe-area-inset-top, 12px));
+        }
 
-      @media (max-width: 640px) {
         .app {
-          gap: 14px;
+          gap: 12px;
         }
 
         .hero,
         .workspace {
-          padding: 22px;
+          padding: 20px 16px;
         }
 
-        .controls {
-          flex-direction: column;
-          align-items: stretch;
+        .upload-zone-inner {
+          padding: 22px 16px;
+          min-height: 100px;
         }
 
-        button {
-          width: 100%;
+        .gallery {
+          grid-template-columns: 1fr;
+        }
+
+        .btn-camera span {
+          display: none;
+        }
+      }
+
+      @media (hover: none) {
+        .upload-zone-sub {
+          display: none;
         }
       }
     </style>
@@ -228,7 +377,7 @@
     <main class="app">
       <section class="hero">
         <h1>Bird Detection</h1>
-        <p class="upload-note">Switch between image and video uploads while keeping the same detection workspace.</p>
+        <p class="subtitle">Upload a photo or video and the model will identify any birds present.</p>
       </section>
 
       <section class="workspace">
@@ -237,14 +386,28 @@
           <button id="videoModeButton" class="mode-button" type="button" onclick="setUploadMode('video')">Video</button>
         </div>
 
-        <div class="controls">
-          <input type="file" id="fileInput" accept="image/*" multiple>
-          <button id="uploadButton" type="button" onclick="uploadImages()">Upload Images</button>
+        <div class="upload-zone" id="uploadZone" onclick="triggerFileInput()" role="button" tabindex="0" aria-label="Select files">
+          <div class="upload-zone-inner">
+            <div class="upload-icon" id="zoneIcon">&#128247;</div>
+            <p class="upload-zone-text" id="zoneText">Tap to select images</p>
+            <p class="upload-zone-sub" id="zoneSub">or drag &amp; drop files here</p>
+            <p class="upload-zone-count" id="zoneCount"></p>
+          </div>
         </div>
 
-        <div class="result-frame">
-          <div id="placeholder" class="placeholder">Upload an image to view the detection result.</div>
-          <div id="gallery" class="gallery"></div>
+        <div class="button-row">
+          <button id="cameraButton" class="btn-camera" type="button" onclick="triggerCamera()" aria-label="Take photo with camera">
+            &#128247; <span>Camera</span>
+          </button>
+          <button id="uploadButton" class="btn-primary" type="button" onclick="uploadImages()">Detect Birds</button>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+
+        <div class="result-frame" id="resultFrame">
+          <p id="placeholder" class="placeholder">Results will appear here after detection.</p>
+          <div id="gallery" class="gallery" hidden></div>
         </div>
 
         <div id="results" class="status"></div>
@@ -254,202 +417,287 @@
     <script src="./config.js"></script>
     <script>
       let uploadMode = "image";
+      let pendingFiles = [];
       const apiBaseUrl = (window.BIRD_API_BASE_URL || "").replace(/\/$/, "");
 
       function apiUrl(path) {
         return apiBaseUrl ? `${apiBaseUrl}${path}` : path;
       }
 
+      // ── File input routing ──
+      function triggerFileInput() {
+        document.getElementById("fileInput").click();
+      }
+
+      function triggerCamera() {
+        document.getElementById("cameraInput").click();
+      }
+
+      document.getElementById("fileInput").addEventListener("change", function () {
+        addFiles(Array.from(this.files));
+        this.value = "";
+      });
+
+      document.getElementById("cameraInput").addEventListener("change", function () {
+        addFiles(Array.from(this.files));
+        this.value = "";
+      });
+
+      function addFiles(files) {
+        if (uploadMode === "video") {
+          pendingFiles = files.slice(0, 1);
+        } else {
+          pendingFiles = pendingFiles.concat(files);
+        }
+        updateZoneCount();
+      }
+
+      function updateZoneCount() {
+        const el = document.getElementById("zoneCount");
+        if (!pendingFiles.length) {
+          el.textContent = "";
+          return;
+        }
+        const label = uploadMode === "video"
+          ? pendingFiles[0].name
+          : `${pendingFiles.length} file${pendingFiles.length === 1 ? "" : "s"} selected`;
+        el.textContent = label;
+      }
+
+      // ── Drag and drop ──
+      const zone = document.getElementById("uploadZone");
+
+      zone.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          triggerFileInput();
+        }
+      });
+
+      zone.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        zone.classList.add("drag-over");
+      });
+
+      zone.addEventListener("dragleave", function () {
+        zone.classList.remove("drag-over");
+      });
+
+      zone.addEventListener("drop", function (e) {
+        e.preventDefault();
+        zone.classList.remove("drag-over");
+        const files = Array.from(e.dataTransfer.files).filter(f =>
+          uploadMode === "video" ? f.type.startsWith("video/") : f.type.startsWith("image/")
+        );
+        if (files.length) addFiles(files);
+      });
+
+      // ── Mode toggle ──
       function setUploadMode(mode) {
-        const fileInput = document.getElementById("fileInput");
-        const uploadButton = document.getElementById("uploadButton");
         const imageModeButton = document.getElementById("imageModeButton");
         const videoModeButton = document.getElementById("videoModeButton");
-        const placeholder = document.getElementById("placeholder");
+        const fileInput = document.getElementById("fileInput");
+        const cameraButton = document.getElementById("cameraButton");
+        const uploadButton = document.getElementById("uploadButton");
         const gallery = document.getElementById("gallery");
-        const results = document.getElementById("results");
+        const placeholder = document.getElementById("placeholder");
+        const resultFrame = document.getElementById("resultFrame");
 
         uploadMode = mode;
-        fileInput.value = "";
-        gallery.style.display = "none";
+        pendingFiles = [];
+        updateZoneCount();
+
+        gallery.hidden = true;
         gallery.innerHTML = "";
-        placeholder.style.display = "block";
-        results.textContent = "";
+        placeholder.hidden = false;
+        resultFrame.classList.remove("has-results");
+        document.getElementById("results").textContent = "";
 
         if (mode === "video") {
           fileInput.accept = "video/*";
           fileInput.multiple = false;
-          uploadButton.textContent = "Upload Video";
+          cameraButton.hidden = true;
+          uploadButton.textContent = "Detect Birds";
           uploadButton.onclick = uploadVideo;
+          document.getElementById("zoneIcon").innerHTML = "&#127909;";
+          document.getElementById("zoneText").textContent = "Tap to select a video";
+          document.getElementById("zoneSub").textContent = "or drag & drop a video file here";
           placeholder.textContent = "Upload a video to generate an annotated playback result.";
           imageModeButton.classList.remove("active");
           videoModeButton.classList.add("active");
         } else {
           fileInput.accept = "image/*";
           fileInput.multiple = true;
-          uploadButton.textContent = "Upload Images";
+          cameraButton.hidden = false;
+          uploadButton.textContent = "Detect Birds";
           uploadButton.onclick = uploadImages;
-          placeholder.textContent = "Upload an image to view the detection result.";
+          document.getElementById("zoneIcon").innerHTML = "&#128247;";
+          document.getElementById("zoneText").textContent = "Tap to select images";
+          document.getElementById("zoneSub").textContent = "or drag & drop files here";
+          placeholder.textContent = "Results will appear here after detection.";
           videoModeButton.classList.remove("active");
           imageModeButton.classList.add("active");
         }
       }
 
+      // ── Render helpers ──
       function renderResultCard(result) {
-        const topDetection = result.top_detection;
-        const title = topDetection ? topDetection.name : "No bird detected";
-        const confidence = topDetection
-          ? `Confidence: ${(topDetection.confidence * 100).toFixed(1)}%`
-          : "Confidence: No detection";
+        const top = result.top_detection;
+        const title = top ? top.name : "No bird detected";
+        const confidence = top
+          ? `Confidence: ${(top.confidence * 100).toFixed(1)}%`
+          : "No detection";
         const detections = result.detections.length
           ? `<ul class="result-list">${result.detections
-              .map((detection) => `<li>${detection.name} - ${(detection.confidence * 100).toFixed(1)}%</li>`)
+              .map(d => `<li>${d.name} &mdash; ${(d.confidence * 100).toFixed(1)}%</li>`)
               .join("")}</ul>`
           : "";
-
         return `
           <article class="result-card">
-            <img src="data:image/jpeg;base64,${result.image}" alt="Detection result for ${result.filename}">
+            <img src="data:image/jpeg;base64,${result.image}" alt="Detection result for ${escapeHtml(result.filename)}">
             <div class="result-meta">
-              <p class="result-name">${title}</p>
+              <p class="result-name">${escapeHtml(title)}</p>
               <p class="result-confidence">${confidence}</p>
-              <p class="result-file">${result.filename}</p>
+              <p class="result-file">${escapeHtml(result.filename)}</p>
               ${detections}
             </div>
-          </article>
-        `;
+          </article>`;
       }
 
       function renderVideoCard(result) {
-        const topDetection = result.top_detection;
-        const title = topDetection ? topDetection.name : "No bird detected";
-        const confidence = topDetection
-          ? `Confidence: ${(topDetection.confidence * 100).toFixed(1)}%`
-          : "Confidence: No detection";
-        const duration = result.duration_seconds ? `Duration: ${result.duration_seconds}s` : "Duration unavailable";
+        const top = result.top_detection;
+        const title = top ? top.name : "No bird detected";
+        const confidence = top
+          ? `Confidence: ${(top.confidence * 100).toFixed(1)}%`
+          : "No detection";
+        const duration = result.duration_seconds ? `Duration: ${result.duration_seconds}s` : "";
         const frames = result.frame_count ? `Frames processed: ${result.frame_count}` : "";
-        const warning = result.warning ? `<p class="result-warning">${result.warning}</p>` : "";
+        const warning = result.warning ? `<p class="result-warning">${escapeHtml(result.warning)}</p>` : "";
         const downloadLink = result.download_url
-          ? `<a class="result-link" href="${result.download_url}" target="_blank" rel="noopener noreferrer">Open processed video</a>`
+          ? `<a class="result-link" href="${result.download_url}" target="_blank" rel="noopener noreferrer">Download processed video</a>`
           : "";
         const detections = result.detections.length
           ? `<ul class="result-list">${result.detections
-              .map((detection) => `<li>${detection.name} - ${(detection.confidence * 100).toFixed(1)}%</li>`)
+              .map(d => `<li>${d.name} &mdash; ${(d.confidence * 100).toFixed(1)}%</li>`)
               .join("")}</ul>`
           : "";
-
         return `
           <article class="result-card">
-            <video controls preload="metadata">
+            <video controls preload="metadata" playsinline>
               <source src="${result.video_url}" type="video/mp4">
             </video>
             <div class="result-meta">
-              <p class="result-name">${title}</p>
+              <p class="result-name">${escapeHtml(title)}</p>
               <p class="result-confidence">${confidence}</p>
-              <p class="result-file">${result.filename}</p>
-              <p class="result-file">${duration}</p>
-              <p class="result-file">${frames}</p>
+              <p class="result-file">${escapeHtml(result.filename)}</p>
+              ${duration ? `<p class="result-file">${duration}</p>` : ""}
+              ${frames ? `<p class="result-file">${frames}</p>` : ""}
               ${warning}
               ${downloadLink}
               ${detections}
             </div>
-          </article>
-        `;
+          </article>`;
       }
 
-      async function uploadImages() {
-        const fileInput = document.getElementById("fileInput");
-        const uploadButton = document.getElementById("uploadButton");
-        const placeholder = document.getElementById("placeholder");
-        const gallery = document.getElementById("gallery");
-        const results = document.getElementById("results");
-        const files = Array.from(fileInput.files);
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
 
-        if (!files.length) {
-          results.textContent = "Please choose at least one image first.";
+      function setLoading(loading, labelWhenDone) {
+        const btn = document.getElementById("uploadButton");
+        if (loading) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="spinner"></span> Processing…';
+        } else {
+          btn.disabled = false;
+          btn.textContent = labelWhenDone || "Detect Birds";
+        }
+      }
+
+      // ── Upload handlers ──
+      async function uploadImages() {
+        if (!pendingFiles.length) {
+          document.getElementById("results").textContent = "Please select at least one image first.";
           return;
         }
 
         const formData = new FormData();
-        files.forEach((file) => formData.append("files", file));
+        pendingFiles.forEach(f => formData.append("files", f));
 
-        uploadButton.disabled = true;
-        uploadButton.textContent = "Processing...";
-        results.textContent = `Processing ${files.length} image${files.length === 1 ? "" : "s"}...`;
+        const gallery = document.getElementById("gallery");
+        const placeholder = document.getElementById("placeholder");
+        const resultFrame = document.getElementById("resultFrame");
+        const results = document.getElementById("results");
+
+        setLoading(true);
+        results.textContent = `Processing ${pendingFiles.length} image${pendingFiles.length === 1 ? "" : "s"}…`;
 
         try {
-          const res = await fetch(apiUrl("/upload"), {
-            method: "POST",
-            body: formData
-          });
-
-          if (!res.ok) {
-            throw new Error("Upload failed.");
-          }
-
+          const res = await fetch(apiUrl("/upload"), { method: "POST", body: formData });
+          if (!res.ok) throw new Error("Upload failed. Please try again.");
           const data = await res.json();
           gallery.innerHTML = data.results.map(renderResultCard).join("");
-          gallery.style.display = "grid";
-          placeholder.style.display = "none";
-          results.textContent = `Showing ${data.results.length} processed image${data.results.length === 1 ? "" : "s"}.`;
-        } catch (error) {
-          gallery.style.display = "none";
+          gallery.hidden = false;
+          placeholder.hidden = true;
+          resultFrame.classList.add("has-results");
+          results.textContent = `${data.results.length} image${data.results.length === 1 ? "" : "s"} processed.`;
+          pendingFiles = [];
+          updateZoneCount();
+        } catch (err) {
+          gallery.hidden = true;
           gallery.innerHTML = "";
-          placeholder.style.display = "block";
-          results.textContent = error.message;
+          placeholder.hidden = false;
+          resultFrame.classList.remove("has-results");
+          results.textContent = err.message;
         } finally {
-          uploadButton.disabled = false;
-          uploadButton.textContent = "Upload Images";
+          setLoading(false, "Detect Birds");
         }
       }
 
       async function uploadVideo() {
-        const fileInput = document.getElementById("fileInput");
-        const uploadButton = document.getElementById("uploadButton");
-        const placeholder = document.getElementById("placeholder");
-        const gallery = document.getElementById("gallery");
-        const results = document.getElementById("results");
-        const file = fileInput.files[0];
-
-        if (!file) {
-          results.textContent = "Please choose a video first.";
+        if (!pendingFiles.length) {
+          document.getElementById("results").textContent = "Please select a video first.";
           return;
         }
 
         const formData = new FormData();
-        formData.append("video", file);
+        formData.append("video", pendingFiles[0]);
 
-        uploadButton.disabled = true;
-        uploadButton.textContent = "Processing...";
-        results.textContent = "Processing video. This can take longer than images...";
+        const gallery = document.getElementById("gallery");
+        const placeholder = document.getElementById("placeholder");
+        const resultFrame = document.getElementById("resultFrame");
+        const results = document.getElementById("results");
+
+        setLoading(true);
+        results.textContent = "Processing video — this may take a moment…";
 
         try {
-          const res = await fetch(apiUrl("/upload-video"), {
-            method: "POST",
-            body: formData
-          });
-
-          if (!res.ok) {
-            throw new Error("Video upload failed.");
-          }
-
+          const res = await fetch(apiUrl("/upload-video"), { method: "POST", body: formData });
+          if (!res.ok) throw new Error("Video upload failed. Please try again.");
           const data = await res.json();
           gallery.innerHTML = renderVideoCard({
             ...data,
             video_url: apiUrl(data.video_url),
             download_url: apiUrl(data.download_url)
           });
-          gallery.style.display = "grid";
-          placeholder.style.display = "none";
+          gallery.hidden = false;
+          placeholder.hidden = true;
+          resultFrame.classList.add("has-results");
           results.textContent = "Processed video ready.";
-        } catch (error) {
-          gallery.style.display = "none";
+          pendingFiles = [];
+          updateZoneCount();
+        } catch (err) {
+          gallery.hidden = true;
           gallery.innerHTML = "";
-          placeholder.style.display = "block";
-          results.textContent = error.message;
+          placeholder.hidden = false;
+          resultFrame.classList.remove("has-results");
+          results.textContent = err.message;
         } finally {
-          uploadButton.disabled = false;
-          uploadButton.textContent = uploadMode === "video" ? "Upload Video" : "Upload Images";
+          setLoading(false, "Detect Birds");
         }
       }
     </script>
